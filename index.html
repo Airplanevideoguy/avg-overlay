@@ -1,6 +1,331 @@
-<iframe
-  src="https://www.airnavradar.com/live-widget/EGLL?type=news&departuresOnly=true&runways=27L,27R,&showIcao=true&metar=true"
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+
+  <!-- Makes the page fit the YoloBox browser correctly -->
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
+
+  <title>Airplane Video Guy Overlay</title>
+
+  <style>
+    /* Remove normal webpage spacing */
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+
+      /* Important: keeps the area above the bar transparent */
+      background: transparent;
+
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
+    /*
+      The complete bar.
+
+      Increase or decrease height to change how much of the
+      picture it covers.
+    */
+    .lower-bar {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+
+      height: 130px;
+
+      display: grid;
+      grid-template-columns: 190px 1fr 160px 170px;
+      align-items: stretch;
+
+      background: rgba(8, 18, 32, 0.94);
+      color: white;
+
+      border-top: 3px solid rgba(255, 255, 255, 0.85);
+    }
+
+    /* Shared appearance for each part of the bar */
+    .section {
+      min-width: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      padding: 10px 14px;
+
+      border-right: 1px solid rgba(255, 255, 255, 0.25);
+    }
+
+    /* Logo section */
+    .logo-section {
+      background: rgba(0, 0, 0, 0.18);
+    }
+
+    .logo-section img {
+      display: block;
+      max-width: 160px;
+      max-height: 100px;
+      object-fit: contain;
+    }
+
+    /* AirNav takes up most of the width */
+    .airnav-section {
+      padding: 0;
+      overflow: hidden;
+    }
+
+    /*
+      Paste the AirNav iframe inside this section.
+
+      These rules try to make it fill the available space.
+    */
+    .airnav-section iframe {
+      width: 100% !important;
+      height: 130px !important;
+
+      display: block;
+      border: 0;
+      overflow: hidden;
+
+      background: transparent;
+    }
+
+    /* Clock and weather boxes */
+    .information {
+      flex-direction: column;
+      text-align: center;
+    }
+
+    .label {
+      margin-bottom: 6px;
+
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: 1.4px;
+      text-transform: uppercase;
+
+      color: rgba(255, 255, 255, 0.7);
+    }
+
+    .value {
+      font-size: 31px;
+      font-weight: 700;
+      line-height: 1;
+      white-space: nowrap;
+    }
+
+    .weather-detail {
+      margin-top: 7px;
+
+      font-size: 14px;
+      color: rgba(255, 255, 255, 0.72);
+    }
+
+    /* Removes the final divider */
+    .section:last-child {
+      border-right: none;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="lower-bar">
+
+    <!-- AVG LOGO -->
+    <div class="section logo-section">
+      <img
+        src="logo.png"
+        alt="Airplane Video Guy"
+      >
+    </div>
+
+    <!-- AIRNAV ARRIVALS AND DEPARTURES -->
+    <div class="section airnav-section">
+
+      <iframe
+  src="https://www.airnavradar.com/live-widget/EGLL?type=news&departuresOnly=true&runways=27L, 27R,&showIcao=true&metar=true"
   width="100%"
   height="120"
   frameborder="0">
 </iframe>
+
+    </div>
+
+    <!-- LIVE CLOCK -->
+    <div class="section information">
+      <div class="label">Local Time</div>
+      <div class="value" id="clock">--:--</div>
+    </div>
+
+    <!-- AIRPORT WEATHER -->
+    <div class="section information">
+      <div class="label" id="airport-name">Heathrow</div>
+      <div class="value" id="temperature">--°C</div>
+      <div class="weather-detail" id="weather-description">
+        Updating weather
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    /*
+      ===========================================================
+      SETTINGS
+      ===========================================================
+
+      Heathrow coordinates are entered below.
+
+      Change these when using another airport.
+    */
+
+    const airport = {
+      name: "Heathrow",
+      latitude: 51.4700,
+      longitude: -0.4543,
+      timeZone: "Europe/London"
+    };
+
+    document.getElementById("airport-name").textContent = airport.name;
+
+    /*
+      ===========================================================
+      CLOCK
+      ===========================================================
+    */
+
+    function updateClock() {
+      const formatter = new Intl.DateTimeFormat("en-GB", {
+        timeZone: airport.timeZone,
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: false
+      });
+
+      document.getElementById("clock").textContent =
+        formatter.format(new Date());
+    }
+
+    updateClock();
+    setInterval(updateClock, 1000);
+
+    /*
+      ===========================================================
+      WEATHER DESCRIPTION
+      ===========================================================
+    */
+
+    function weatherDescription(code) {
+      const descriptions = {
+        0: "Clear",
+        1: "Mainly clear",
+        2: "Partly cloudy",
+        3: "Overcast",
+        45: "Fog",
+        48: "Freezing fog",
+        51: "Light drizzle",
+        53: "Drizzle",
+        55: "Heavy drizzle",
+        56: "Freezing drizzle",
+        57: "Freezing drizzle",
+        61: "Light rain",
+        63: "Rain",
+        65: "Heavy rain",
+        66: "Freezing rain",
+        67: "Freezing rain",
+        71: "Light snow",
+        73: "Snow",
+        75: "Heavy snow",
+        77: "Snow grains",
+        80: "Rain showers",
+        81: "Rain showers",
+        82: "Heavy showers",
+        85: "Snow showers",
+        86: "Heavy snow showers",
+        95: "Thunderstorm",
+        96: "Thunderstorm",
+        99: "Severe thunderstorm"
+      };
+
+      return descriptions[code] || "Current conditions";
+    }
+
+    /*
+      ===========================================================
+      WEATHER
+      ===========================================================
+
+      This uses Open-Meteo. It does not require an API key.
+    */
+
+    async function updateWeather() {
+      const temperatureElement =
+        document.getElementById("temperature");
+
+      const descriptionElement =
+        document.getElementById("weather-description");
+
+      const weatherURL =
+        "https://api.open-meteo.com/v1/forecast" +
+        "?latitude=" + airport.latitude +
+        "&longitude=" + airport.longitude +
+        "&current=temperature_2m,weather_code" +
+        "&temperature_unit=celsius" +
+        "&timezone=auto";
+
+      try {
+        const response = await fetch(weatherURL, {
+          cache: "no-store"
+        });
+
+        if (!response.ok) {
+          throw new Error("Weather request failed");
+        }
+
+        const data = await response.json();
+
+        const temperature =
+          Math.round(data.current.temperature_2m);
+
+        const weatherCode =
+          data.current.weather_code;
+
+        temperatureElement.textContent =
+          temperature + "°C";
+
+        descriptionElement.textContent =
+          weatherDescription(weatherCode);
+
+      } catch (error) {
+        console.error(error);
+
+        temperatureElement.textContent = "--°C";
+        descriptionElement.textContent =
+          "Weather unavailable";
+      }
+    }
+
+    updateWeather();
+
+    /*
+      Refresh the temperature every 10 minutes.
+      There is no need to request it every few seconds.
+    */
+    setInterval(updateWeather, 10 * 60 * 1000);
+  </script>
+
+</body>
+</html>
